@@ -1,0 +1,60 @@
+.schedulerMainSection
+{
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  width: 100%;
+  height: 100%;
+}
+
+#scheduler-labels-container
+{
+  height: 10%;
+  width: 100%;
+}
+
+.schedulerLabels
+{
+  width: 30%;
+  font-size: 36px;
+  color: var(--text-color-main);
+}
+
+#scheduler-daySetting-row
+{
+  display: flex;
+  width: 100%;
+}
+
+.checkBox
+{
+  padding-left: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 36px;
+  color: var(--text-color-main);
+  width: 20%;
+  height: 100%;
+}
+
+.selectBoxContainer
+{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: var(--text-color-main);
+  height: 100%;
+  width: 30%;
+}
+
+.selectBox
+{
+  width: 50%;
+  height: 50%;
+  font-size: 24px;
+  text-align: center;
+  color: var(--text-color-main);
+  border: 2px solid var(--text-color-main);
+}

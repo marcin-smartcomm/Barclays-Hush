@@ -1,0 +1,66 @@
+.PINChangeMainSection
+{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+#changingPINStatusBox
+{
+  position: absolute; 
+  top: 570px;
+  right: 0px;
+  width: 600px;
+  height: 510px;
+}
+
+.message-container
+{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 40px;
+}
+
+.PINChange-message-text
+{
+  color: var(--main-color);
+  font-size: 36px;
+}
+
+.spinning-circle
+{
+  margin-right: 40px;
+  width: 30px;
+  height: 30px;
+  background-color: white;
+  border-radius: 50%;
+  border: 10px dotted var(--main-color);
+  animation-name: spin;
+  animation-duration: 2000ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear; 
+}
+
+@keyframes spin {
+    from {
+        transform:rotate(0deg);
+    }
+    to {
+        transform:rotate(360deg);
+    }
+}
+
+@keyframes goGreen {
+    from {
+        background-color: white;
+        border: 10px dotted var(--main-color);
+    }
+    to {
+      background-color: green;
+      border: none;
+    }
+}

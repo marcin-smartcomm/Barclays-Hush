@@ -1,0 +1,111 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#Symbol_name "Samsung MDC Brightness Control"
+ 
+integer_parameter displayIDByte, commandByte, dataLengthByte;
+                                   
+digital_input _skip_, _skip_, _skip_, ConnectedToBox, _skip_, Brightness_Up, Brightness_Down, _skip_;
+analog_input brightnessLevel#, _skip_;
+string_input Samsung_Rx$[100];
+
+analog_output _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, brightnessLevel_Fb#, _skip_;
+string_output Samsung_Tx$;
+                       
+string displayIDByteChr[2], commandByteChr[2], dataLengthByteChr[2];
+integer currentBrightness;
+       
+
+
+
+function GetCurrentBrightness()
+{	
+	integer sum;
+	string checkSum[10];
+
+	sum = commandByte + displayIDByte;
+	checkSum = chr(low(sum));
+
+ 	Samsung_Tx$ = "\xAA"+commandByteChr+displayIDByteChr+"\x00"+checkSum;
+}
+
+function ChangeBrightness(integer level)
+{
+	string checkSum[10];
+	string brightnessLevelChr[10];
+	string command[10];
+	integer sum;
+	
+	brightnessLevelChr = chr(level);
+            
+	sum = commandByte + displayIDByte + dataLengthByte + level;
+	checkSum = chr(low(sum));
+
+	command = "\xAA" + commandByteChr + displayIDByteChr + dataLengthByteChr + brightnessLevelChr + checkSum;
+	Samsung_Tx$ = command; 	
+}
+
+change brightnessLevel#
+{
+	ChangeBrightness(brightnessLevel#);
+}
+
+change Samsung_Rx$
+{
+	string toCheck$[10], displyChr$[10];
+
+	tocheck$ = "\xAA\xFF"+displayIDByteChr+"\x03"+"A"+commandByteChr;
+ 	if(left(Samsung_Rx$, 6) = tocheck$)
+	{
+		currentBrightness = byte((mid(Samsung_Rx$, 7, 1)), 1);
+     	brightnessLevel_Fb# = currentBrightness;
+	}
+}
+
+push ConnectedToBox
+{
+	GetCurrentBrightness();
+}
+
+push Brightness_Up
+{
+	integer newValue;
+
+ 	if(ConnectedToBox)
+	{
+    	if(currentBrightness < 95)
+		{
+			newValue = currentBrightness + 5;
+         	ChangeBrightness(newValue);
+		}
+		else
+		{
+         	ChangeBrightness(100);
+		}
+	}	
+}
+
+push Brightness_Down
+{
+	integer newValue;
+
+ 	if(ConnectedToBox)
+	{
+    	if(currentBrightness > 5)
+		{
+			newValue = currentBrightness - 5;
+         	ChangeBrightness(newValue);
+		}
+		else
+		{
+         	ChangeBrightness(0);
+		}
+	}	
+}
+
+function Main()
+{
+ 	commandByteChr = chr(commandByte);
+	displayIDByteChr = chr(displayIDByte);
+	dataLengthByteChr = chr(dataLengthByte);
+}

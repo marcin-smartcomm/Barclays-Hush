@@ -1,0 +1,8 @@
+<Device Model="CP4N">
+   <Network Type="Cresnet" Id="01"/>
+   <Network Type="Ethernet" Id="02">
+      <Device Model="TSW-1070" DeviceId="03" Name="Rack Mounted"/>
+      <Device Model="Core3 UI XPanel" DeviceId="04" Name="PC1"/>
+      <Device Model="Core3 UI XPanel" DeviceId="05" Name="PC2"/>
+   </Network>
+</Device>

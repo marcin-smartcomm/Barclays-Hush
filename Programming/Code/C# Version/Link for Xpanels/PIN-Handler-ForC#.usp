@@ -1,0 +1,111 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#SYMBOL_NAME "PIN-Handler-C#"
+
+digital_input Initialize, Backspace, Num[10];
+                               
+digital_output _skip_, BackspaceVis, CorrectPIN, WrongPIN;
+
+string_output _skip_, pinStars, CurrentUserPIN, SendPINForCheck;
+
+string_input _skip_, Main_Program_Rx$[500];
+
+//Global Variables
+string UserPIN[5], sBuf[10], PIN[5];
+
+integer pinLength, x;
+signed_integer nFileHandle;
+ 
+function ResetValues()
+{
+ 	pinLength = 0;
+	PIN = "";
+	pinStars = "";
+}
+
+function UpdateStars()
+{
+	if(pinLength = 0)
+		pinStars = "";
+	if(pinLength = 1)
+		pinStars = "*";
+	if(pinLength = 2)
+		pinStars = "**";
+	if(pinLength = 3)
+		pinStars = "***";
+}
+
+function CheckBackspaceVis()
+{
+	if(pinLength > 0)
+		BackspaceVis = 1;
+
+	if(pinLength = 0)
+		BackspaceVis = 0;
+}
+
+push Initialize
+{
+ 	ResetValues();
+}
+
+push Num
+{
+	x = getlastmodifiedarrayindex();
+                        
+	if(x = 10)
+		x = 0;
+
+    PIN = PIN + itoa(x);	
+
+ 	pinLength = pinLength + 1;
+
+	if(pinLength > 3)
+	{
+     	SendPINForCheck = "Login:" + PIN;
+	}
+	
+	UpdateStars();  
+	CheckBackspaceVis();                                  
+}
+
+push Backspace
+{
+ 	if(pinLength = 0) {}
+	
+	if(pinLength = 1)
+	{
+		ResetValues();
+	}
+
+	if(pinLength = 2)
+	{
+     	PIN = Left(PIN, 1);
+		pinLength = 1;
+	}
+
+	if(pinLength = 3)
+	{
+     	PIN = Left(PIN, 2);
+		pinLength = 2;
+	}
+
+	UpdateStars();
+	CheckBackspaceVis();
+}
+
+change Main_Program_Rx$
+{
+ 	if(Main_Program_Rx$ = "Login:Success")
+	{
+     	pulse(1, CorrectPIN);
+		CurrentUserPIN = PIN;
+		ResetValues(); 
+	}
+	if(Main_Program_Rx$ = "Login:Failed")
+	{
+     	pulse(1, WrongPIN);
+		ResetValues();
+	}
+}

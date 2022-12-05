@@ -1,0 +1,54 @@
+.PINPageMainSection
+{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.PINEntryContainer
+{
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 345px;
+}
+
+.PINEntryBtn
+{
+  transition: background-color 0.1s;
+
+  margin-left: 15px;
+  margin-top: 15px;
+  width: 100px;
+  height: 100px;
+  background-color: transparent;
+  border: 2px solid var(--main-color);
+  border-radius: 20px;
+  font-size: 36px;
+  color: var(--text-color-main);
+}
+
+.PINEntryBtn:last-child
+{
+  margin-left: 130px;
+}
+
+.PINEntryBtn:active
+{
+  color: white;
+  background-color: var(--main-color);
+}
+
+#PINInputTextField
+{
+  margin-left: 5px;
+  width: 345px;
+  height: 100px;
+  font-size: 36px;
+  text-align: center;
+  color: var(--text-color-main);
+  pointer-events: none;
+  border: none;
+}

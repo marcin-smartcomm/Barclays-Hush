@@ -1,0 +1,27 @@
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#symbol_name "Recall Previously selected option"
+#default_nonvolatile
+              
+integer_parameter Default_Input;
+
+digital_input _skip_, Recall, _skip_, saveOption[10];
+digital_output _skip_, _skip_, _skip_, recallOption[10];
+
+integer x, previouslySelected;
+
+push saveOption
+{
+ 	x = getlastmodifiedarrayindex();
+	previouslySelected = x;
+}
+
+push Recall
+{
+	if(previouslySelected = 0)
+	{
+     	previouslySelected  = Default_Input;
+	} 
+
+ 	pulse(1, recallOption[previouslySelected]);
+}

@@ -1,0 +1,100 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#Symbol_Name "Barclays-Schedule-decoder"
+
+string_input Main_Program_Rx$[10000];
+
+digital_output daysOnFb[7];
+string_output _skip_, daysOnTimes$[7], _skip_, daysOffTimes$[7];
+
+integer pointerPos, i, actualHour;
+      
+function getDayStates()
+{
+ 	pointerPos = find("states",Main_Program_Rx$) + 9; 	
+
+    for(i = 1 to 7)
+	{           
+       	if(mid(Main_Program_Rx$, pointerPos, 4) = "true")
+		{
+           	daysOnFb[i] = 1;
+			pointerPos = pointerPos + 5;
+		}
+		else
+		{
+           	daysOnFb[i] = 0;
+			pointerPos = pointerPos + 6;
+		}
+	}
+}
+
+function getOnTimes()
+{
+	pointerPos = find("onTimes",Main_Program_Rx$) + 11;
+
+    for(i = 1 to 7)
+	{
+		if(mid(Main_Program_Rx$, pointerPos, 1) = "," || mid(Main_Program_Rx$, pointerPos, 1) = "]")
+		{
+			pointerPos = pointerPos - 1;
+			actualHour = atoi(mid(Main_Program_Rx$, pointerPos, 1)) - 1;   
+	      	daysOnTimes$[i] = "0" + itoa(actualHour) + ":00";
+			pointerPos = pointerPos + 3;
+		}
+		else
+		{
+            pointerPos = pointerPos - 1;
+			actualHour = atoi(mid(Main_Program_Rx$, pointerPos, 2)) - 1;
+			if(actualHour < 10)
+			{
+                daysOnTimes$[i] = "0" + itoa(actualHour) + ":00";
+			}
+			else
+			{        
+				daysOnTimes$[i] = itoa(actualHour) + ":00";  	
+			}
+			pointerPos = pointerPos + 4;
+		}
+	}
+}
+
+function getOffTimes()
+{
+	pointerPos = find("offTimes",Main_Program_Rx$) + 12;
+
+    for(i = 1 to 7)
+	{
+		if(mid(Main_Program_Rx$, pointerPos, 1) = "," || mid(Main_Program_Rx$, pointerPos, 1) = "]")
+		{
+			pointerPos = pointerPos - 1;
+			actualHour = atoi(mid(Main_Program_Rx$, pointerPos, 1)) - 1;   
+	      	daysOffTimes$[i] = "0" + itoa(actualHour) + ":00";
+			pointerPos = pointerPos + 3;
+		}
+		else
+		{
+            pointerPos = pointerPos - 1;
+			actualHour = atoi(mid(Main_Program_Rx$, pointerPos, 2)) - 1;
+			if(actualHour < 10)
+			{
+                daysOffTimes$[i] = "0" + itoa(actualHour) + ":00";
+			}
+			else
+			{        
+				daysOffTimes$[i] = itoa(actualHour) + ":00";  	
+			}
+			pointerPos = pointerPos + 4;
+		}
+	}
+}
+
+change Main_Program_Rx$
+{
+	if(mid(Main_Program_Rx$, 3, 8) = "dayNames")
+	{		
+        getDayStates();
+		getOnTimes();
+		getOffTimes();
+	}
+}

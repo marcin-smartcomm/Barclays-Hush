@@ -1,0 +1,22 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#symbol_name "Barclays-Debounce"
+                      
+string_parameter dayIndex[2];
+digital_input _skip_, Feedback, Press;
+string_output _skip_, Tx$;
+
+push Press
+{
+ 	if(Feedback)
+	{
+     	Tx$ = "Scheduler:DayState:" + dayIndex + ":false";
+		delay(50);
+	}
+	else
+	{
+     	Tx$ = "Scheduler:DayState:" + dayIndex + ":true";
+		delay(50);  	
+	}
+}

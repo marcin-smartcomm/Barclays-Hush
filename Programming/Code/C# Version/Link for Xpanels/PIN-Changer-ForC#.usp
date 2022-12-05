@@ -1,0 +1,169 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#SYMBOL_NAME "PIN-Changer-ForC#"
+
+digital_input ResetChangePINValues, _skip_, Backspace, Num[10], _skip_;
+
+string_input UserPIN[5];
+                               
+digital_output 	BackspaceVis, _skip_, _skip_, 	CurrentPINCorrect, CurrentPINWrong, _skip_,
+												NewPINCorrect, _skip_,
+												NewPINConfirmCorrect, NewPINConfirmWrong, _skip_,
+				_skip_;
+
+string_output _skip_, pinStars, Main_Program_Tx$;
+
+//Global Variables
+string PIN[5], currentPIN[5], newPIN[5];
+
+integer pinLength, x, currentPINEntered, newPINEntered, newPINConfirmEntered;
+ 
+function ResetValues()
+{
+ 	pinLength = 0;
+	PIN = "";
+	pinStars = "";
+	currentPINEntered = 0;
+	newPINEntered = 0;
+    newPINConfirmEntered = 0;
+	CurrentPINCorrect = 0;
+	CurrentPINWrong = 0;
+	NewPINCorrect = 0;
+	NewPINConfirmCorrect = 0;
+	NewPINConfirmWrong = 0;
+}
+
+function ClearPINEntryVariables()
+{
+	pinLength = 0;
+	PIN = "";
+	pinStars = "";
+}
+
+function InitializeValues()
+{
+ 	ResetValues();
+}
+
+function UpdateStars()
+{
+	if(pinLength = 0)
+		pinStars = "";
+	if(pinLength = 1)
+		pinStars = "*";
+	if(pinLength = 2)
+		pinStars = "**";
+	if(pinLength = 3)
+		pinStars = "***";
+}
+
+function CheckBackspaceVis()
+{
+	if(pinLength > 0)
+		BackspaceVis = 1;
+
+	if(pinLength = 0)
+		BackspaceVis = 0;
+}
+
+function SaveNewPINInFile()
+{
+	Main_Program_Tx$ = "PINChange:" + newPIN;
+}
+
+function EvaluatePINEntered(string PINtoCheck)
+{
+ 	if(currentPINEntered = 0)
+	{
+     	if(PINtoCheck = currentPIN)
+		{
+         	currentPINEntered = 1;
+			CurrentPINCorrect = 1;
+			ClearPINEntryVariables();
+		}
+		else
+		{
+			pulse(1, CurrentPINWrong);
+         	ResetValues();
+		}
+	} 
+	else if(currentPINEntered = 1 && newPINEntered = 0)
+	{
+     	newPIN = PINtoCheck;
+		newPINEntered = 1;
+		NewPINCorrect = 1;
+		ClearPINEntryVariables();
+	}
+	else if(newPINEntered = 1 && newPINConfirmEntered = 0)
+	{
+     	if(PINtoCheck = newPIN)
+		{
+         	NewPINConfirmCorrect = 1;
+			SaveNewPINInFile();
+			currentPIN = newPIN;
+			delay(100);
+			ResetValues();			
+		}
+		else
+		{
+         	pulse(1, NewPINConfirmWrong);
+			ClearPINEntryVariables();
+		}
+	}
+}
+
+change UserPIN
+{
+ 	currentPIN = UserPIN;
+}
+  
+push ResetChangePINValues
+{
+ 	ResetValues();
+}
+
+push Num
+{
+	x = getlastmodifiedarrayindex();
+                        
+	if(x = 10)
+		x = 0;
+
+    PIN = PIN + itoa(x);	
+
+ 	pinLength = pinLength + 1;
+
+	if(pinLength > 3)
+	{
+		EvaluatePINEntered(PIN);
+	}
+	
+	UpdateStars();  
+	CheckBackspaceVis();                                  
+}
+
+push Backspace
+{
+ 	if(pinLength = 0) {}
+	
+	if(pinLength = 1)
+	{
+		ClearPINEntryVariables();
+	}
+
+	if(pinLength = 2)
+	{
+     	PIN = Left(PIN, 1);
+		pinLength = 1;
+	}
+
+	if(pinLength = 3)
+	{
+     	PIN = Left(PIN, 2);
+		pinLength = 2;
+	}
+
+	UpdateStars();
+	CheckBackspaceVis();
+}

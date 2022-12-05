@@ -1,0 +1,51 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#Symbol_name "Samsung MDC Brightness Control"
+ 
+integer_parameter displayIDByte, commandByte, dataLengthByte;
+                                   
+digital_input _skip_, _skip_, _skip_, ConnectedToBox, _skip_, Power_On, Power_Off, _skip_;
+string_input Samsung_Rx$[100];
+
+digital_output _skip_, _skip_, _skip_, _skip_, _skip_, Power_On_Fb, Power_Off_Fb, _skip_;
+string_output Samsung_Tx$;
+                       
+string displayIDByteChr[2], commandByteChr[2], dataLengthByteChr[2];
+
+function GetCurrentPower()
+{
+	Samsung_Tx$ = "\xAA\x84"+displayIDByteChr+"0x00"+"0x85";
+}     
+
+change Samsung_Rx$
+{
+	string toCheck$[10], displyChr$[10], powerOffByte$[2], powerOnByte$[2];
+    
+	powerOffByte$ = "\x00";
+	powerOnByte$ = "\x01";
+	tocheck$ = "\xAA\xFF"+displayIDByteChr+"\x03"+"A"+commandByteChr;
+ 	if(left(Samsung_Rx$, 6) = tocheck$)
+	{
+       	if(mid(Samsung_Rx$, 7, 1) = powerOffByte$)
+		{
+         	Power_Off_Fb = 1;
+		}      	
+		if(mid(Samsung_Rx$, 7, 1) = "\x01")
+		{
+         	Power_On_Fb = 1;
+		}
+	}
+}
+
+push ConnectedToBox
+{
+	GetCurrentPower();
+}
+
+function Main()
+{
+ 	commandByteChr = chr(commandByte);
+	displayIDByteChr = chr(displayIDByte);
+	dataLengthByteChr = chr(dataLengthByte);
+}

@@ -1,0 +1,522 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#SYMBOL_NAME "Scheduler"
+           
+string_parameter _skip_, fileLocation[300];
+
+digital_input 	Initialize, _skip_, HourlyCheck, MondayOnOff, TuesdayOnOff, WednesdayOnOff, ThursdayOnOff, FridayOnOff, SaturdayOnOff, SundayOnOff,
+
+				_skip_, MondayOnTime[24], MondayOffTime[24], TuesdayOnTime[24], TuesdayOffTime[24], WednesdayOnTime[24], WednesdayOffTime[24],
+						ThursdayOnTime[24], ThursdayOffTime[24], FridayOnTime[24], FridayOffTime[24], SaturdayOnTime[24], SaturdayOffTime[24],
+						SundayOnTime[24], SundayOffTime[24];
+
+digital_output _skip_, _skip_, _skip_, MondayOnFb, TuesdayOnFb, WednesdayOnFb, ThursdayOnFb, FridayOnFb, SaturdayOnFb, SundayOnFb, _skip_, ScreensOn, ScreensOff;
+
+string_output _skip_, 	MondayOnTimeFb, MondayOffTimeFb,
+						TuesdayOnTimeFb, TuesdayOffTimeFb,
+						WednesdayOnTimeFb, WednesdayOffTimeFb,
+						ThursdayOnTimeFb, ThursdayOffTimeFb,
+						FridayOnTimeFb, FridayOffTimeFb,
+						SaturdayOnTimeFb, SaturdayOffTimeFb,
+						SundayOnTimeFb, SundayOffTimeFb;
+      
+
+//GLOBAL VARIABLES
+STRING sBuf[4096], scheduleData[4096], scheduleDataTemplate[4096], today$[20];
+nonvolatile string days[6][4], onTime[6][3], offTime[6][3];
+                                                                                                         
+nonvolatile integer MondayState, TuesdayState, WednesdayState, ThursdayState, FridayState, SaturdayState, SundayState, dayState[6];
+integer  i, x;
+
+SIGNED_INTEGER  nFileHandle;
+ 
+function createDataTemplate()
+{
+	scheduleDataTemplate = days[0] + "-" + itoa(dayState[0]) + "/" + onTime[0] + ":00/" + offTime[0] + ":00\n";
+	for(i = 1 to 6)
+	{    
+		scheduleDataTemplate = scheduleDataTemplate + days[i] + "-" + itoa(dayState[i]) + "/" + onTime[i] + ":00/" + offTime[i] + ":00\n";
+	}
+}
+
+push Initialize
+{      	
+	string dayState$[2];
+	integer statePos, timePos; 
+
+	days[0] = "Mon";
+	days[1] = "Tue";
+	days[2] = "Wed";
+	days[3] = "Thu";
+	days[4] = "Fri";
+	days[5] = "Sat";
+	days[6] = "Sun";	
+
+	StartFileOperations();
+	
+	    nFileHandle = FileOpen ( fileLocation, _O_RDONLY | _O_TEXT);
+	
+	    IF (nFileHandle >= 0)
+	
+	    {
+	
+	      WHILE (FileRead(nFileHandle, sBuf, 4096) > 0)	  
+		    scheduleData = sbuf;
+	
+	      IF ( FileClose ( nFileHandle ) <> 0 )
+	
+	        PRINT ( "Error closing file\n" );
+	
+	    }	
+    EndFileOperations();
+    
+	for(i = 0 to 6)
+	{
+		//Read which Days are active
+		statePos = find(days[i], scheduleData) + 4;
+		dayState[i] = atoi(mid(scheduleData, statePos, 1));
+
+		//Read On/Off Times
+
+		//On Time
+		timePos = statePos + 2;
+		onTime[i] = mid(scheduleData, timePos, 2);
+		
+        //Off Time
+		timePos = timePos + 6;
+		offTime[i] = mid(scheduleData, timePos, 2);
+	}	
+
+	MondayState = dayState[0];
+	TuesdayState = dayState[1];
+	WednesdayState = dayState[2];
+	ThursdayState = dayState[3];
+	FridayState = dayState[4];
+	SaturdayState = dayState[5];
+	SundayState = dayState[6];
+
+	MondayOnFb = MondayState;
+	TuesdayOnFb = TuesdayState;
+	WednesdayOnFb = WednesdayState;
+	ThursdayOnFb = ThursdayState;
+	FridayOnFb = FridayState;
+	SaturdayOnFb = SaturdayState;
+	SundayOnFb = SundayState;
+
+	MondayOnTimeFb = onTime[0] + ":00";
+	MondayOffTimeFb = offTime[0] + ":00";
+	TuesdayOnTimeFb = onTime[1] + ":00";
+	TuesdayOffTimeFb = offTime[1] + ":00";
+	WednesdayOnTimeFb = onTime[2] + ":00";
+	WednesdayOffTimeFb = offTime[2] + ":00";
+	ThursdayOnTimeFb = onTime[3] + ":00";
+	ThursdayOffTimeFb = offTime[3] + ":00";
+	FridayOnTimeFb = onTime[4] + ":00";
+	FridayOffTimeFb = offTime[4] + ":00";
+	SaturdayOnTimeFb = onTime[5] + ":00";
+	SaturdayOffTimeFb = offTime[5] + ":00";
+	SundayOnTimeFb = onTime[6] + ":00";
+	SundayOffTimeFb = offTime[6] + ":00";    
+
+	createDataTemplate();            
+}
+
+function updateFile()
+{ 	
+	createDataTemplate();
+
+	StartFileOperations();    
+
+		IF ( FileDelete ( "\\NVRAM\\SchedulerTimes.txt" ) <> 0 )
+
+      		PRINT ( "Error deleting file\n" );
+
+		nFileHandle = FileOpen("\\NVRAM\\SchedulerTimes.txt", _O_CREAT | _O_WRONLY | _O_TEXT);
+		if(nFileHandle >= 0)
+		{
+			if(fileWrite(nFileHandle, scheduleDataTemplate, 4096) > 0)
+				print ("Written to file:\n%s", scheduleDataTemplate);
+			if (fileclose(nFileHandle) <> 0 )
+				print ("Error closing file \n");
+		}
+		
+	EndFileOperations();
+
+}
+
+push HourlyCheck
+{
+ 	today$ = day();
+
+	for(i = 0 to 6)
+	{
+     	if(left(today$, 3) = days[i])
+		{
+         	if(dayState[i] = 1)
+			{
+             	if(atoi(onTime[i]) = GetHourNum())
+				{
+                 	pulse(1, ScreensOn);
+				}
+
+             	if(atoi(offTime[i]) = GetHourNum())
+				{
+                 	pulse(1, ScreensOff);           	
+				}
+			}
+		}
+	}
+}
+
+push MondayOnOff
+{
+ 	if(MondayState = 1)
+		{MondayState = 0;}
+ 	else if(MondayState = 0)
+		{MondayState = 1;}
+
+	MondayOnFb = MondayState;
+	dayState[0] = MondayState;
+	updateFile();
+
+	delay(25); //prevent debounce
+}
+
+push TuesdayOnOff
+{
+ 	if(TuesdayState = 1)
+		{TuesdayState = 0;}
+ 	else if(TuesdayState = 0)
+		{TuesdayState = 1;}
+    
+	TuesdayOnFb = TuesdayState;
+	dayState[1] = TuesdayState;
+	updateFile();                            
+	
+	delay(25); //prevent debounce
+}
+
+
+push WednesdayOnOff
+{
+ 	if(WednesdayState = 1)
+		{WednesdayState = 0;}
+ 	else if(WednesdayState = 0)
+		{WednesdayState = 1;}
+
+	WednesdayOnFb = WednesdayState;
+	dayState[2] = WednesdayState;
+	updateFile();
+
+	delay(25); //prevent debounce
+}
+
+
+push ThursdayOnOff
+{
+ 	if(ThursdayState = 1)
+		{ThursdayState = 0;}
+ 	else if(ThursdayState = 0)
+		{ThursdayState = 1;}
+
+	ThursdayOnFb = ThursdayState;
+	dayState[3] = ThursdayState;
+	updateFile();
+
+	delay(25); //prevent debounce
+}
+
+
+push FridayOnOff
+{
+ 	if(FridayState = 1)
+		{FridayState = 0;}
+ 	else if(FridayState = 0)
+		{FridayState = 1;}
+
+	FridayOnFb = FridayState;
+	dayState[4] = FridayState;
+	updateFile();
+
+	delay(25); //prevent debounce
+}
+
+
+push SaturdayOnOff
+{
+ 	if(SaturdayState = 1)
+		{SaturdayState = 0;}
+ 	else if(SaturdayState = 0)
+		{SaturdayState = 1;}
+
+	SaturdayOnFb = SaturdayState;
+	dayState[5] = SaturdayState;
+	updateFile();
+
+	delay(25); //prevent debounce
+}
+
+
+push SundayOnOff
+{
+ 	if(SundayState = 1)
+		{SundayState = 0;}
+ 	else if(SundayState = 0)
+		{SundayState = 1;}
+
+	SundayOnFb = SundayState;
+	dayState[6] = SundayState;
+	updateFile();
+             
+	delay(25); //prevent debounce
+}
+
+function UpdateUI(string whichDay, string whatState, integer whichHour)
+{
+	string leadingZero[10];
+	string toUI[500];
+
+	if(whichHour < 10)
+		{leadingZero = "0";}
+	else
+		{leadingZero = "";}
+
+  	toUI = leadingZero + itoa(whichHour) + ":00";
+
+ 	if(whichDay = "Monday")
+	{
+     	if(whatState = "On")
+		{
+        	MondayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	MondayOffTimeFb = toUI;
+		}
+	}
+
+ 	if(whichDay = "Tuesday")
+	{
+     	if(whatState = "On")
+		{
+        	TuesdayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	TuesdayOffTimeFb = toUI;
+		}
+	}
+
+ 	if(whichDay = "Wednesday")
+	{
+     	if(whatState = "On")
+		{
+        	WednesdayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	WednesdayOffTimeFb = toUI;
+		}
+	}
+
+ 	if(whichDay = "Thursday")
+	{
+     	if(whatState = "On")
+		{
+        	ThursdayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	ThursdayOffTimeFb = toUI;
+		}
+	}
+
+ 	if(whichDay = "Friday")
+	{
+     	if(whatState = "On")
+		{
+        	FridayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	FridayOffTimeFb = toUI;
+		}
+	}
+
+ 	if(whichDay = "Saturday")
+	{
+     	if(whatState = "On")
+		{
+        	SaturdayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	SaturdayOffTimeFb = toUI;
+		}
+	}
+
+ 	if(whichDay = "Sunday")
+	{
+     	if(whatState = "On")
+		{
+        	SundayOnTimeFb = toUI;
+		}
+		if(whatState = "Off")
+		{		       
+        	SundayOffTimeFb = toUI;
+		}
+	}
+}
+
+function UpdateOntTime(integer whatDay, integer whatTime)
+{
+	string leadingZero[2];	
+
+	if(whatTime < 10)	{
+     	leadingZero = "0";
+	}else {
+     	leadingZero = "";
+	}
+
+	onTime[whatDay] = leadingZero + itoa(whatTime);	
+}
+
+function UpdateOfftTime(integer whatDay, integer whatTime)
+{
+	string leadingZero[2];	
+
+	if(whatTime < 10)	{
+     	leadingZero = "0";
+	}else {
+     	leadingZero = "";
+	}
+
+	offTime[whatDay] = leadingZero + itoa(whatTime);	
+}
+         
+push MondayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Monday", "On", x-1);
+	UpdateOntTime(0, x-1);
+	updatefile();
+}
+          
+push MondayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Monday", "Off", x-1);
+	UpdateOfftTime(0, x-1);
+	updatefile();
+}
+         
+push TuesdayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Tuesday", "On", x-1);
+	UpdateOntTime(1, x-1);
+	updatefile();
+}
+          
+push TuesdayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Tuesday", "Off", x-1);
+	UpdateOfftTime(1, x-1);
+	updatefile();
+}
+         
+push WednesdayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Wednesday", "On", x-1);
+	UpdateOntTime(2, x-1);
+	updatefile();
+}
+          
+push WednesdayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Wednesday", "Off", x-1);
+	UpdateOfftTime(2, x-1);
+	updatefile();
+}
+         
+push ThursdayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Thursday", "On", x-1);
+	UpdateOntTime(3, x-1);
+	updatefile();
+}
+          
+push ThursdayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Thursday", "Off", x-1);
+	UpdateOfftTime(3, x-1);
+	updatefile();
+}
+         
+push FridayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Friday", "On", x-1);
+	UpdateOntTime(4, x-1);
+	updatefile();
+}
+          
+push FridayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Friday", "Off", x-1);
+	UpdateOfftTime(4, x-1);
+	updatefile();
+}
+         
+push SaturdayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Saturday", "On", x-1);
+	UpdateOntTime(5, x-1);
+	updatefile();
+}
+          
+push SaturdayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Saturday", "Off", x-1);
+	UpdateOfftTime(5, x-1);
+	updatefile();
+}
+         
+push SundayOnTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Sunday", "On", x-1);
+	UpdateOntTime(6, x-1);
+	updatefile();
+}
+          
+push SundayOffTime
+{
+ 	x = getlastmodifiedarrayindex();
+
+	UpdateUI("Sunday", "Off", x-1);
+	UpdateOfftTime(6, x-1);
+	updatefile();
+}

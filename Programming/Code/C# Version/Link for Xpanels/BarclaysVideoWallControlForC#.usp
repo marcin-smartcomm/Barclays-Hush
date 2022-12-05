@@ -1,0 +1,98 @@
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#symbol_name "BarclaysVideoWallControlForC#"
+  
+string_input Main_Program_Rx$[1000];
+analog_input InputForOutput[5];
+                      
+digital_output Output1Input[9], _skip_, Output2Input[9], _skip_, Output3Input[9], _skip_, Output4Input[9], _skip_, Output5Input[9];
+
+string_output _skip_, Main_Program_Tx$;
+ 
+integer x, i;
+string input$[5], output$[5];
+     
+function ClearOutput(integer output)
+{
+	if(output = 1)
+	{
+	 	for(i = 1 to 9)
+		{
+	     	Output1Input[i] = 0;
+		}
+	}
+	if(output = 2)
+	{
+	 	for(i = 1 to 9)
+		{
+	     	Output2Input[i] = 0;
+		}
+	}
+	if(output = 3)
+	{
+	 	for(i = 1 to 9)
+		{
+	     	Output3Input[i] = 0;
+		}
+	}
+	if(output = 4)
+	{
+	 	for(i = 1 to 9)
+		{
+	     	Output4Input[i] = 0;
+		}
+	}
+	if(output = 5)
+	{
+	 	for(i = 1 to 9)
+		{
+	     	Output5Input[i] = 0;
+		}
+	}
+}
+
+change InputForOutput
+{
+	x = getlastmodifiedarrayindex();
+
+	input$ = itoa(InputForOutput[x]);
+	output$ = itoa(x);
+
+	Main_Program_Tx$ = "VideoMatrix:ChangeInput:"+input$+":"+output$;	 	
+}
+
+change Main_Program_Rx$
+{
+ 	if(left(Main_Program_Rx$, 5) = "Video")
+	{
+     	if(mid(Main_Program_Rx$, 13, 11) = "ChangeInput")
+		{
+         	if(mid(Main_Program_Rx$, 27, 1) = "1")
+			{
+             	ClearOutput(atoi(mid(Main_Program_Rx$, 27, 1)));
+				Output1Input[atoi(mid(Main_Program_Rx$, 25, 1))] = 1;
+			}
+         	if(mid(Main_Program_Rx$, 27, 1) = "2")
+			{
+             	ClearOutput(atoi(mid(Main_Program_Rx$, 27, 1)));
+				Output2Input[atoi(mid(Main_Program_Rx$, 25, 1))] = 1;
+			}
+         	if(mid(Main_Program_Rx$, 27, 1) = "3")
+			{
+             	ClearOutput(atoi(mid(Main_Program_Rx$, 27, 1)));
+				Output3Input[atoi(mid(Main_Program_Rx$, 25, 1))] = 1;
+			}
+         	if(mid(Main_Program_Rx$, 27, 1) = "4")
+			{
+             	ClearOutput(atoi(mid(Main_Program_Rx$, 27, 1)));
+				Output4Input[atoi(mid(Main_Program_Rx$, 25, 1))] = 1;
+			}
+         	if(mid(Main_Program_Rx$, 27, 1) = "5")
+			{
+             	ClearOutput(atoi(mid(Main_Program_Rx$, 27, 1)));
+				Output5Input[atoi(mid(Main_Program_Rx$, 25, 1))] = 1;
+			}
+		}
+	}
+}
